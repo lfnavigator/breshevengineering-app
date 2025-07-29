@@ -2,22 +2,22 @@ FROM python:3.10-slim-buster
 
 WORKDIR /app
 
-# Копируем backend и устанавливаем зависимости
+# Копируем backend dependencies
 COPY backend/requirements.txt ./backend/requirements.txt
 RUN pip install --no-cache-dir -r backend/requirements.txt
 
-# Копируем frontend (собранные статические файлы)
+# Копируем собранные статические файлы фронтенда
 COPY frontend/dist ./frontend/dist
 
-# Копируем основной код backend
-COPY backend/main.py ./backend/main.py
+# Копируем основной файл приложения (бывший main.py)
+COPY app.py ./app.py
 
 # Устанавливаем uvicorn
 RUN pip install uvicorn
 
 # Открываем порт
-EXPOSE 8000
+EXPOSE 7860
 
 # Запускаем приложение
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
 
