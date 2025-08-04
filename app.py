@@ -9,30 +9,16 @@ from scipy.integrate import quad
 
 app = FastAPI()
 
-# Настройка CORS
+# ✅ Разрешаем CORS для всех источников
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Разрешить все источники
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Разрешить все методы
-    allow_headers=["*"],  # Разрешить все заголовки
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Монтируем статические файлы фронтенда
-app.mount("/", StaticFiles(directory="./frontend/dist", html=True), name="static")
-
-@app.get("/api", response_class=HTMLResponse)
-async def root():
-    return """
-    <html>
-        <head><title>AURA RotorCalc</title></head>
-        <body>
-            <h2>🌀 AURA RotorCalc API is running</h2>
-            <p>Try <a href="/docs">/docs</a> to test the API interface.</p>
-        </body>
-    </html>
-    """
-
+# ✅ Входная модель
 class BearingInput(BaseModel):
     alpha: float = 30
     a1: float = 350
@@ -49,6 +35,7 @@ class BearingInput(BaseModel):
     pa: float = 1e5
     ps: float = 5e5
 
+# ✅ Основной маршрут расчёта
 @app.post("/api/calculate")
 def calculate(input: BearingInput):
     try:
@@ -62,13 +49,10 @@ def calculate(input: BearingInput):
         Pa = p_a**2
 
         B = 12 * input.mm * input.a1 * (2 / (input.k + 1)) ** ((input.k + 1) / (2 * (input.k - 1)))
-        Fk = (2 / (input.k + 1)) ** ((input.k + 1) / (2 * (input.k + 1)))
-
         m_ = (input.alpha_corr * B * input.nd * input.N * input.D) / (C**2 * input.ps)
         zeta = log(r1 / r_inner) * (log(r1) / log(r_inner))
 
         p_d = sqrt(((p_a**2) + (m_ * zeta * sqrt(1 + (m_ * zeta)**2 - p_a**4))) / (1 + m_ * zeta)) * 1.1
-        Pd = (Pa + m_ * zeta) / (1 + m_ * zeta)
         Q = (pi * (input.ps**2) * (C**3) * m_ * 3600) / (12 * input.mm * input.pa)
 
         c = sqrt((2 * abs(log(r1))) / (p_d**2 - p_a**2))
@@ -100,5 +84,18 @@ def calculate(input: BearingInput):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ✅ Проверка (откроется при GET-запросе на /api)
+@app.get("/api", response_class=HTMLResponse)
+async def root():
+    return """
+    <html>
+        <head><title>AURA RotorCalc</title></head>
+        <body>
+            <h2>✅ AURA RotorCalc API is running</h2>
+            <p>Try <a href='/docs'>/docs</a> to test the API interface.</p>
+        </body>
+    </html>
+    """
 
-
+# ✅ Фронтенд (собранный React в ./frontend/dist)
+app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")
